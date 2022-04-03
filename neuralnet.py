@@ -7,7 +7,7 @@ import numpy as np
 # NEURAL NETWORK CONFIGURATION
 
 # Number of nodes in each of the columns
-COL_NODES = [16,4,4,1]
+COL_NODES = [808,4,1]
 
 # Number of nodes in output column
 OUT_NODES = 1
@@ -40,11 +40,14 @@ class NeuralNet:
         
     def loadinputbits(self, inbits: bitstring.BitArray):
         
+        self.node_values = []
+        self.z_values = []
         
         if(len(inbits)!=COL_NODES[0]):
             raise ValueError("Expected %d input bits, received %d" % (COL_NODES[0], len(inbits)))
             
-        self.inputbits = np.array(inbits)
+        self.node_values.append(np.array(inbits))
+        
         
     def loadeval(self, position_eval:float = 0):
         
@@ -57,11 +60,11 @@ class NeuralNet:
         self.loadeval(row[0][3])        
         
             
-    def printintputbits(self):
-        print(self.inputbits.bin)
+    def getintputbits(self):
+        return self.node_values[0].bin
     
-    def printeval(self):
-        print(self.position_eval)
+    def geteval(self):
+        return self.position_eval
         
     def initializeweights(self, zeroinit:bool = False):
         
@@ -140,7 +143,6 @@ class NeuralNet:
         
         self.node_list = mlist       
         self.biases = blist
-        self.node_values = []
                 
         
                 
@@ -181,11 +183,14 @@ class NeuralNet:
     # Returns the output vector of the network    
     
     def feedforward(self, input_vector:np.ndarray, weights:np.ndarray, biases:np.ndarray):
-
-        for w, b in zip(weights, biases):
-            input_vector = self.sigmafy(np.dot(w, input_vector) + b)
         
-        self.node_values.append(input_vector)
+        for w, b in zip(weights, biases):
+            z = self.getz(w, input_vector, b)
+            input_vector = self.sigmafy(z)
+            self.z_values.append(z)
+            self.node_values.append(input_vector)
+        
+        #print(self.node_values)
         return input_vector
     
     def expandoutput(self, outputnode:np.array):
@@ -193,11 +198,12 @@ class NeuralNet:
         mineval = -50
         maxeval = 50
         
+        
         return outputnode[0] * (maxeval - mineval) + mineval
         
-    def calcoutput(self):
-               
-        self.output_value = self.expandoutput(self.feedforward(self.inputbits, self.node_list, self.biases))
+    def calcoutput(self):        
+              
+        self.output_value = self.expandoutput(self.feedforward(self.node_values[0], self.node_list, self.biases))
         
                     
     def sigmafy(self, x:np.float64):
@@ -216,16 +222,81 @@ class NeuralNet:
         
         return self.dsigmafy(z)
     
-    def dzdw(self, a:float):
+    def dzdw(self, w:float):
         
-        return a
+        return w
     
-    # def backpropagate(self):
+    def dCdw(self, next_node:float, last_node:float, y:float, w:float, b:float):
+        return self.dzdw(last_node) * self.dsigmafy(next_node*w+b)*self.dCda(next_node, y)
+    
+    def dCdb(self, next_node:float, last_node:float, y:float, w:float, b:float):
+        return self.dsigmafy(next_node*w+b)*self.dCda(next_node, y) 
+    
+    def getz(self, weight:np.ndarray, node:np.ndarray, bias:np.ndarray):
+        return np.dot(weight, node) + bias
+    
+    def backpropagate(self):
         
-    #     gradients = []
-    #     bias_gradients = []
+        #print(self.node_list[0])
+        gradients = []
+        bias_gradients = []
         
-                
+        sumofdeltas = 0
+        delta = 0
+        
+        dCda_values = []
+        
+        for i in range(len(COL_NODES)-1):
+            gradients.append(np.empty((COL_NODES[i+1], COL_NODES[i])))
+            dCda_values.append(np.empty((COL_NODES[i+1])))
+            bias_gradients.append(np.empty(COL_NODES[i+1]))
+        for i in range(len(self.node_list)-1, 0, -1):
+            #print("i: %d " % (i))
+            for j in range(len(self.node_list[i])):
+                #print("j: %d " % (j), end='')
+                if(i == len(self.node_list)-1):      
+                    dCda_values[i][j] = self.dCda(self.node_values[i+1][j], self.position_eval)
+                else:
+                    delta = 0
+                    
+                    for jj in range(len(gradients[i+1]-1)):     
+                        # print("jj:%d " % (jj), end='')
+                        # print(dCda_values[i+1][jj])
+                        # print(self.dsigmafy(self.z_values[i+1][jj]))
+                        # print(self.node_list[i+1][jj][j])
+                        # print("########################")
+                        delta += dCda_values[i+1][jj] * self.dsigmafy(self.z_values[i+1][jj]) * self.node_list[i+1][jj][j]
+                dCda_values[i][j] = delta
+                bias_gradients[i][j] =  dCda_values[i][j] * self.dsigmafy(self.z_values[i][j])  
+                for k in range(len(self.node_list[i][j])):
+                    #print("k:%d " % (k), end='')
+                    # print(self.dCda(self.node_values[i+1][j], self.position_eval))
+                    # print(self.dsigmafy(self.z_values[i][j]))
+                    # print(self.node_values[i][k])
+                    # print("########################")
+                    gradients[i][j][k] = dCda_values[i][j] * self.dsigmafy(self.z_values[i][j]) * self.node_values[i][k]
+            #print()       
+            self.node_list[i] += gradients[i]
+            self.biases[i] += bias_gradients[i]
+                    
+        
+        
+        # for i in range(len(self.node_values[len(self.node_values)-1])):
+        #     delta = delta + self.dCda(self.node_values[len(self.node_values)-1][i], self.position_eval)
+        
+        # for i in range(len(COL_NODES)-1, 0, -1):
+        #     for j in range(COL_NODES[i-1]):
+        #         #bias_gradients[i][j] = self.dCdb(self.node_values[i][j], self.node_values[i-1][j], self.position_eval, self.node_list[i][j][k], self.biases[i][j])
+        #         for k in range(COL_NODES[i]):
+        #             #tmp = delta * self.dadz(self.node_list[i][j] * self.node_values[i][j] + self.biases[j]) * self.dzdw(self.node_list[i][k])
+        #             tmp = delta * self.dadz(self.node_list[i-1][0])
+                    
+
+        #             sumofdeltas = sumofdeltas + tmp
+        #             #gradients[i][j][k] = self.bias_gradients[i][j] * self.dzdw(last_node)
+         
+        #print(gradients)
+        #print(bias_gradients)
     #     for i in range(0, len(COL_NODES)-1):
     #         gradients.append(np.empty((COL_NODES[i+1], COL_NODES[i])))
     #         bias_gradients.append(np.empty(COL_NODES[i+1]))
@@ -261,5 +332,5 @@ class NeuralNet:
         
         a = 1
         
-    def printoutput(self):
-        print(self.output_value)
+    def getoutput(self):
+        return self.output_value
