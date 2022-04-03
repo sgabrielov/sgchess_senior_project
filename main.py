@@ -4,8 +4,9 @@ import dbimport as db
 import neuralnet as nn
 
 import bitstring
+import time
 
-TEST_CHUNK = 10000
+TEST_CHUNK = 100000
 
 def main():
     
@@ -15,16 +16,24 @@ def main():
     
     num_rows = db.countdata(dbname)
     cumulative_error = 0
+    ttime = 0
     for x in range(num_rows):
         
         row = db.getrow(x+1, dbname)
         net.processrow(row)
+        sttime = time.time()
         net.calcoutput()
-        if((x+1)%TEST_CHUNK==1) :
+        ttime += time.time() - sttime
+        if((x+1)%TEST_CHUNK==0) :
+            print("--- %s seconds ---" % (ttime))
+
+            ttime = 0
+            
             print("Row %d" % (x+1), end='')
             print(" | Error: %f" % (cumulative_error/TEST_CHUNK))
             print("Sample eval: %f" % net.geteval(), end='')
             print("Sample out: %f" % net.getoutput())
+            
             cumulative_error = 0
         cumulative_error += (net.geteval() - net.getoutput()) * (net.geteval() - net.getoutput())
         net.backpropagate()
