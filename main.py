@@ -6,7 +6,7 @@ import neuralnet as nn
 import bitstring
 import time
 
-TEST_CHUNK = 100000
+TEST_CHUNK = 10000
 
 def main():
     
@@ -46,9 +46,9 @@ def main2():
     dbname = "test.db"
     net = nn.NeuralNet()
     net.initializeweights(False)
-    a = bitstring.BitArray('0x0000')
+    a = bitstring.BitArray('0xC5')
     net.loadinputbits(a)
-    net.loadeval(0.0)
+    net.loadeval(0)
     net.calcoutput()
     net.backpropagate()
     

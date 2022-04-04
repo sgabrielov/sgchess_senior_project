@@ -7,7 +7,7 @@ import numpy as np
 # NEURAL NETWORK CONFIGURATION
 
 # Number of nodes in each of the columns
-COL_NODES = [808,32,16,1]
+COL_NODES = [808,16,1]
 
 # Number of nodes in output column
 OUT_NODES = 1
@@ -52,6 +52,10 @@ class NeuralNet:
     def loadeval(self, position_eval:float = 0):
         
         self.position_eval = position_eval
+        if(self.position_eval > 10):
+            self.position_eval = 10
+        if(self.position_eval < -10):
+            self.position_eval = 10
     
     def processrow(self, row: list):
                 
@@ -152,7 +156,7 @@ class NeuralNet:
         else:
             return random.random() * (randmax - randmin) + randmin
     
-    def printweights(self, randmin:int = -1, randmax:int = 1):
+    def printweights(self):
         
         # print("Hidden column 1:")
         # for i in range(COL_NODES[0]):
@@ -195,11 +199,17 @@ class NeuralNet:
     
     def expandoutput(self, outputnode:np.array):
         
-        mineval = -50
-        maxeval = 50
+        mineval = -12
+        maxeval = 12
         
         
         return outputnode[0] * (maxeval - mineval) + mineval
+    
+    def compressoutput(self, outputnode:np.array):
+        mineval = -12
+        maxeval = 12
+        
+        return (outputnode - mineval) / (maxeval - mineval)
         
     def calcoutput(self):        
               
@@ -208,7 +218,7 @@ class NeuralNet:
                     
     def sigmafy(self, x:np.float64):
         
-        return 1 / (1 + np.exp(0 - x))
+        return 1 / (1 + (1/np.exp(x)))
         
     def dsigmafy(self, x:float):
         
@@ -216,7 +226,7 @@ class NeuralNet:
     
     def dCda(self, a:float, y:float):
         
-        return 2 * (a - y)
+        return 2 * (a - self.compressoutput(y))
     
     def dadz(self, z:float):
         
@@ -240,44 +250,70 @@ class NeuralNet:
         #print(self.node_list[0])
         gradients = []
         bias_gradients = []
-        
+        sumgradients = 0
+        sumbiases = 0
         sumofdeltas = 0
         delta = 0
         
         dCda_values = []
         
+        
         for i in range(len(COL_NODES)-1):
             gradients.append(np.empty((COL_NODES[i+1], COL_NODES[i])))
             dCda_values.append(np.empty((COL_NODES[i+1])))
             bias_gradients.append(np.empty(COL_NODES[i+1]))
-        for i in range(len(self.node_list)-1, 0, -1):
+        for i in range(len(self.node_list)-1, -1, -1):
             #print("i: %d " % (i))
             for j in range(len(self.node_list[i])):
                 #print("j: %d " % (j), end='')
-                if(i == len(self.node_list)-1):      
+                if(i == len(self.node_list)-1):
+                    #print(dCda_values)
                     dCda_values[i][j] = self.dCda(self.node_values[i+1][j], self.position_eval)
+                    #print(self.output_value)
+                    #print("dCda_values[%d][%d] = 2(%f - %f) = %f" % (i,j,self.node_values[i+1][j], self.position_eval, dCda_values[i][j]))
                 else:
                     delta = 0
                     
-                    for jj in range(len(gradients[i+1]-1)):     
+                    for jj in range(len(gradients[i+1])):     
                         # print("jj:%d " % (jj), end='')
                         # print(dCda_values[i+1][jj])
                         # print(self.dsigmafy(self.z_values[i+1][jj]))
                         # print(self.node_list[i+1][jj][j])
                         # print("########################")
-                        delta += dCda_values[i+1][jj] * self.dsigmafy(self.z_values[i+1][jj]) * self.node_list[i+1][jj][j]
-                dCda_values[i][j] = delta
-                bias_gradients[i][j] =  dCda_values[i][j] * self.dsigmafy(self.z_values[i][j])  
+                        
+                        delta += dCda_values[i+1][jj] * self.dadz(self.z_values[i+1][jj]) * self.node_list[i+1][jj][j]
+                        #print("delta += %f * %f * %f = %f" % (dCda_values[i+1][jj], self.dadz(self.z_values[i+1][jj]), self.node_list[i+1][jj][j], delta))
+                        #print("delta: %f" % (delta))
+                    dCda_values[i][j] = delta
+                    #print("dCda_values[%d][%d] = %f" % (i,j,dCda_values[i][j]))
+                    
+                    #print(dCda_values)
+                bias_gradients[i][j] =  dCda_values[i][j] * self.dadz(self.z_values[i][j])  
+                sumbiases += bias_gradients[i][j]
                 for k in range(len(self.node_list[i][j])):
                     #print("k:%d " % (k), end='')
                     # print(self.dCda(self.node_values[i+1][j], self.position_eval))
                     # print(self.dsigmafy(self.z_values[i][j]))
                     # print(self.node_values[i][k])
                     # print("########################")
-                    gradients[i][j][k] = dCda_values[i][j] * self.dsigmafy(self.z_values[i][j]) * self.node_values[i][k]
+                    #print("gradients[%d][%d][%d] = %f * %f * %f" % (i,j,k,dCda_values[i][j], self.dadz(self.z_values[i][j]), self.node_values[i][k]))
+                    gradients[i][j][k] = dCda_values[i][j] * self.dadz(self.z_values[i][j]) * self.node_values[i][k]
+                    sumgradients += gradients[i][j][k]
             #print()       
-            self.node_list[i] += gradients[i]
-            self.biases[i] += bias_gradients[i]
+            self.node_list[i] -= gradients[i]
+            self.biases[i] -= bias_gradients[i]
+        #print(self.node_values)
+        #print(dCda_values)
+        #print(self.z_values)
+        
+        #print(bias_gradients)
+        #print(gradients)
+        
+        #print(self.node_list)
+        #print(self.biases)
+        #print(sumbiases + sumgradients, end=' : ')
+        #print(self.output_value - self.position_eval)
+        #print(self.node_list)
                     
         
         
