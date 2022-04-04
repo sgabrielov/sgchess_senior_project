@@ -7,7 +7,7 @@ import numpy as np
 # NEURAL NETWORK CONFIGURATION
 
 # Number of nodes in each of the columns
-COL_NODES = [808,4,1]
+COL_NODES = [808,32,16,1]
 
 # Number of nodes in output column
 OUT_NODES = 1
