@@ -5,8 +5,9 @@ import neuralnet as nn
 
 import bitstring
 import time
+import random
 
-TEST_CHUNK = 10000
+TEST_CHUNK = 1000
 
 def main():
     
@@ -17,27 +18,38 @@ def main():
     num_rows = db.countdata(dbname)
     cumulative_error = 0
     ttime = 0
-    for y in range(3):
-        for x in range(num_rows):
+    worst_eval = 0
+    worst_output = 0
+    worst_cost = 0
+    count = 0
+    while(True):
+        count += 1
+        x = random.randint(1, num_rows)
+        row = db.getrow(x+1, dbname)
+        net.processrow(row)
+        sttime = time.time()
+        net.calcoutput()
+        ttime += time.time() - sttime
+        cost = (net.geteval() - net.getoutput()) * (net.geteval() - net.getoutput())
+        if(cost > worst_cost):
+            worst_eval = net.geteval()
+            worst_output = net.getoutput()
+            worst_cost = cost
+        if((count)%TEST_CHUNK==0):
+            print("--- %s seconds ---" % (ttime))
+
+            ttime = 0
             
-            row = db.getrow(x+1, dbname)
-            net.processrow(row)
-            sttime = time.time()
-            net.calcoutput()
-            ttime += time.time() - sttime
-            if((x+1)%TEST_CHUNK==0):
-                print("--- %s seconds ---" % (ttime))
-    
-                ttime = 0
-                
-                print("Row %d" % (x+1), end='')
-                print(" | Error: %f" % (cumulative_error/TEST_CHUNK))
-                print("Sample eval: %f" % net.geteval(), end='')
-                print("Sample out: %f" % net.getoutput())
-                
-                cumulative_error = 0
-            cumulative_error += (net.geteval() - net.getoutput()) * (net.geteval() - net.getoutput())
-            net.backpropagate()
+            print("Row %d" % (count), end='')
+            print(" | Error: %f" % (cumulative_error/TEST_CHUNK))
+            print("Sample eval: %f" % net.geteval(), end=' || ')
+            print("Sample out: %f" % net.getoutput())
+            print("Worst cost: %f || Eval: %f || Out: %f" % (worst_cost, worst_eval, worst_output))
+            worst_cost = 0
+            
+            cumulative_error = 0
+        cumulative_error += cost
+        net.backpropagate()
     #net.printintputbits()
 
     

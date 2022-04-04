@@ -289,7 +289,7 @@ class NeuralNet:
                     
                     #print(dCda_values)
                 bias_gradients[i][j] =  dCda_values[i][j] * self.dadz(self.z_values[i][j])  
-                sumbiases += bias_gradients[i][j]
+                sumbiases += abs(bias_gradients[i][j])
                 for k in range(len(self.node_list[i][j])):
                     #print("k:%d " % (k), end='')
                     # print(self.dCda(self.node_values[i+1][j], self.position_eval))
@@ -298,7 +298,7 @@ class NeuralNet:
                     # print("########################")
                     #print("gradients[%d][%d][%d] = %f * %f * %f" % (i,j,k,dCda_values[i][j], self.dadz(self.z_values[i][j]), self.node_values[i][k]))
                     gradients[i][j][k] = dCda_values[i][j] * self.dadz(self.z_values[i][j]) * self.node_values[i][k]
-                    sumgradients += gradients[i][j][k]
+                    sumgradients += abs(gradients[i][j][k])
             #print()       
             self.node_list[i] -= gradients[i]
             self.biases[i] -= bias_gradients[i]
@@ -312,7 +312,8 @@ class NeuralNet:
         #print(self.node_list)
         #print(self.biases)
         #print(sumbiases + sumgradients, end=' : ')
-        #print(self.output_value - self.position_eval)
+        #print(self.output_value - self.position_eval, end=' : ')
+        #print((self.output_value - self.position_eval)/(sumbiases + sumgradients))
         #print(self.node_list)
                     
         
