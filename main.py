@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 TEST_CHUNK = 100
 
 def line_graph(values, filename):
+    plt.clf()
     plt.plot(values)
     plt.ylabel('Cost')
     plt.xlabel('Iter x%d' % (TEST_CHUNK))
