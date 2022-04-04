@@ -11,12 +11,12 @@ import matplotlib.pyplot as plt
 
 TEST_CHUNK = 100
 
-def line_graph(values):
+def line_graph(values, filename):
     plt.plot(values)
     plt.ylabel('Cost')
     plt.xlabel('Iter x%d' % (TEST_CHUNK))
     #plt.show()
-    plt.savefig('plot.png')
+    plt.savefig(filename)
 
 def main():
     
@@ -32,6 +32,7 @@ def main():
     worst_cost = 0
     count = 0
     errors = []
+    worsts = []
     while(True):
         count += 1
         x = random.randint(1, num_rows)
@@ -55,12 +56,15 @@ def main():
             print("Sample eval: %f" % net.geteval(), end=' || ')
             print("Sample out: %f" % net.getoutput())
             print("Worst cost: %f || Eval: %f || Out: %f" % (worst_cost, worst_eval, worst_output))
-            worst_cost = 0
+            
+            worsts.append(worst_cost)
             errors.append(cumulative_error/TEST_CHUNK)
             
+            worst_cost = 0
             cumulative_error = 0
             
-            line_graph(errors)
+            line_graph(errors, "error_plot.png")
+            line_graph(worsts, "worst_plot.png")
         cumulative_error += cost
         net.backpropagate()
     #net.printintputbits()
