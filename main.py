@@ -7,7 +7,16 @@ import bitstring
 import time
 import random
 
-TEST_CHUNK = 1000
+import matplotlib.pyplot as plt
+
+TEST_CHUNK = 100
+
+def line_graph(values):
+    plt.plot(values)
+    plt.ylabel('Cost')
+    plt.xlabel('Iter x%d' % (TEST_CHUNK))
+    #plt.show()
+    plt.savefig('plot.png')
 
 def main():
     
@@ -22,6 +31,7 @@ def main():
     worst_output = 0
     worst_cost = 0
     count = 0
+    errors = []
     while(True):
         count += 1
         x = random.randint(1, num_rows)
@@ -46,8 +56,11 @@ def main():
             print("Sample out: %f" % net.getoutput())
             print("Worst cost: %f || Eval: %f || Out: %f" % (worst_cost, worst_eval, worst_output))
             worst_cost = 0
+            errors.append(cumulative_error/TEST_CHUNK)
             
             cumulative_error = 0
+            
+            line_graph(errors)
         cumulative_error += cost
         net.backpropagate()
     #net.printintputbits()
