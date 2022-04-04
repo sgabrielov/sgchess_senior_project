@@ -9,7 +9,7 @@ import random
 
 import matplotlib.pyplot as plt
 
-TEST_CHUNK = 100
+TEST_CHUNK = 1000
 
 def line_graph(values, filename):
     plt.clf()

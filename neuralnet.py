@@ -199,15 +199,15 @@ class NeuralNet:
     
     def expandoutput(self, outputnode:np.array):
         
-        mineval = -12
-        maxeval = 12
+        mineval = -10
+        maxeval = 10
         
         
         return outputnode[0] * (maxeval - mineval) + mineval
     
     def compressoutput(self, outputnode:np.array):
-        mineval = -12
-        maxeval = 12
+        mineval = -10
+        maxeval = 10
         
         return (outputnode - mineval) / (maxeval - mineval)
         
