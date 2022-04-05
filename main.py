@@ -9,7 +9,7 @@ import random
 
 import matplotlib.pyplot as plt
 
-TEST_CHUNK = 10
+TEST_CHUNK = 10000
 
 def line_graph(values, filename):
     plt.clf()
@@ -34,7 +34,6 @@ def main():
     net.initializeweights(False)
     
     num_rows = db.countdata(dbname)
-    num_rows = 500
     cumulative_error = 0
     worst_eval = 0
     worst_output = 0
