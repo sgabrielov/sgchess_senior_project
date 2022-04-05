@@ -76,7 +76,7 @@ def main():
                 if((count)%TEST_CHUNK==0):
                     save(net)
         
-                    progress = (i * count2) / (epochs * num_rows)
+                    progress = 1.0 * (i * count2) / (epochs * num_rows)
                     ttaken = time.time() - sttime
                     if(progress > 0):
                         tremain = ttaken * (1-progress) / progress
