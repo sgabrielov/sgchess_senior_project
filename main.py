@@ -9,7 +9,7 @@ import random
 
 import matplotlib.pyplot as plt
 
-TEST_CHUNK = 10000
+TEST_CHUNK = 10
 
 def line_graph(values, filename):
     plt.clf()
@@ -34,6 +34,7 @@ def main():
     net.initializeweights(False)
     
     num_rows = db.countdata(dbname)
+    num_rows = 500
     cumulative_error = 0
     worst_eval = 0
     worst_output = 0
@@ -76,12 +77,13 @@ def main():
                 if((count)%TEST_CHUNK==0):
                     save(net)
         
-                    progress = 1.0 * (i * count2) / (epochs * num_rows)
+                    progress = float((i+1) * count2) / (epochs * num_rows)
                     ttaken = time.time() - sttime
                     if(progress > 0):
                         tremain = ttaken * (1-progress) / progress
                     
                     print("Progress: %.2f%%" % (progress*100))
+                    print(progress)
                     if(tremain > 3600):
                         print("Time remaining: %d hours" % (tremain / 3600))
                     else:
