@@ -19,6 +19,14 @@ def line_graph(values, filename):
     #plt.show()
     plt.savefig(filename)
 
+def save(net:nn.NeuralNet):
+    net.savebiases("bias.p")
+    net.saveweights("weights.p")
+    
+def load(net:nn.NeuralNet):
+    net.loadbiases("bias.p")
+    net.loadweights("weights.p")   
+    
 def main():
     
     dbname = "test.db"
@@ -48,6 +56,7 @@ def main():
             worst_output = net.getoutput()
             worst_cost = cost
         if((count)%TEST_CHUNK==0):
+            save(net)
             print("--- %s seconds ---" % (ttime))
 
             ttime = 0
@@ -83,8 +92,61 @@ def main2():
     net.backpropagate()
     
 def main3():
-    for i in range(2, 0, -1):
-        print("i: %d " % (i))
+    net = nn.NeuralNet()
+    net.initializeweights(False)
+    
+    cumulative_error = 0
+    ttime = 0
+    worst_eval = 0
+    worst_output = 0
+    worst_cost = 0
+    count = 0
+    
+    errors = []
+    worsts = []
+    
+    net.loadbiases("bias.p")
+    net.loadweights("weights.p")    
+    for j in range(5000):
+        count += 1
+        n = random.randint(0,255)
+        t = '{0:08b}'.format(n)
+        b = bitstring.BitArray(bin=t)
+        
+        net.loadinputbits(b)
+        net.loadeval(n)
+        net.calcoutput()
+        
+        cost = (net.geteval() - net.getoutput()) * (net.geteval() - net.getoutput())
+        
+        if(cost > worst_cost):
+            worst_eval = net.geteval()
+            worst_output = net.getoutput()
+            worst_cost = cost
+        if((count)%TEST_CHUNK==0):
+        
+            # print("Row %d" % (count), end='')
+            # print(" | Error: %f" % (cumulative_error/TEST_CHUNK))
+            # print("Sample eval: %f" % net.geteval(), end=' || ')
+            # print("Sample out: %f" % net.getoutput())
+            # print("Worst cost: %f || Eval: %f || Out: %f" % (worst_cost, worst_eval, worst_output))
+            
+            worsts.append(worst_cost)
+            errors.append(cumulative_error/TEST_CHUNK)
+            
+            worst_cost = 0
+            cumulative_error = 0
+
+            line_graph(errors, "error_plot.png")
+            line_graph(worsts, "worst_plot.png")            
+
+        cumulative_error += cost
+        net.backpropagate()
+    net.savebiases("bias.p")
+    net.saveweights("weights.p")
+    print(net.getoutput())
+    print(net.geteval())
+
 main()
 
     

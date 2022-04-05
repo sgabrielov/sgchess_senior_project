@@ -3,6 +3,7 @@
 import bitstring
 import random
 import numpy as np
+import pickle
 
 # NEURAL NETWORK CONFIGURATION
 
@@ -56,7 +57,25 @@ class NeuralNet:
             self.position_eval = 10
         if(self.position_eval < -10):
             self.position_eval = 10
-    
+            
+    def loadweights(self, filename:str):
+        with open(filename, 'rb') as fp:
+            self.node_list = pickle.load(fp)
+                
+    def loadbiases(self, filename:str):
+        with open(filename, 'rb') as fp:
+            self.biases = pickle.load(fp)
+        
+    def saveweights(self, filename:str):
+        with open(filename, 'wb') as fp:
+            pickle.dump(self.node_list, fp)
+            print("saved to %s" % (filename))
+        
+    def savebiases(self, filename:str):
+        with open(filename, 'wb') as fp:
+            pickle.dump(self.biases, fp)
+            print("saved to %s" % (filename))
+        
     def processrow(self, row: list):
                 
         self.loadinputbits(bitstring.BitArray(row[0][2]))
@@ -361,13 +380,6 @@ class NeuralNet:
     #     #     gradient_vectors[NUMCOLS-1][i] = sumofdeltas
         
         
-    def loadweights(self, filename: str):
-        
-        a = 1
-        
-    def saveweights(self, filename: str):
-        
-        a = 1
         
     def getoutput(self):
         return self.output_value
