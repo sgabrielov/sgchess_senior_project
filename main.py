@@ -44,7 +44,7 @@ def main():
     worsts = []
     
     iterlist = list(range(num_rows))
-    random.shuffle(iterlist)
+    
     
     sttime = time.time()
     ttaken = 0
@@ -55,6 +55,7 @@ def main():
         print("############## NEXT ITER (C%d) ##############" % (count))
         count = 0
         count2 = 0
+        random.shuffle(iterlist)
         for x in iterlist:
         
             
