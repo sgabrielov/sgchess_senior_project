@@ -50,7 +50,7 @@ def main():
     ttaken = 0
     tremain = 0
     progress = 0
-    epochs = 3
+    epochs = 1
     for i in range(epochs):
         print("############## NEXT ITER (C%d) ##############" % (count))
         count = 0
@@ -76,7 +76,7 @@ def main():
                 if((count)%TEST_CHUNK==0):
                     save(net)
         
-                    progress = (i * count) / (epochs * num_rows)
+                    progress = (i * count2) / (epochs * num_rows)
                     ttaken = time.time() - sttime
                     if(progress > 0):
                         tremain = ttaken * (1-progress) / progress
