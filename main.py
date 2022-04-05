@@ -82,7 +82,6 @@ def main():
                         tremain = ttaken * (1-progress) / progress
                     
                     print("Progress: %.2f%%" % (progress*100))
-                    print(progress)
                     if(tremain > 3600):
                         print("Time remaining: %d hours" % (tremain / 3600))
                     else:
