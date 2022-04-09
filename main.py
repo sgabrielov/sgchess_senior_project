@@ -3,6 +3,8 @@
 import dbimport as db
 import neuralnet as nn
 
+import cupy as np
+
 import bitstring
 import time
 import random
@@ -10,6 +12,8 @@ import random
 import matplotlib.pyplot as plt
 
 TEST_CHUNK = 10000
+DB_BATCH_SIZE = 100000
+TEST_SAMPLE_SIZE = 1000000
 
 def line_graph(values, filename):
     plt.clf()
@@ -29,9 +33,11 @@ def load(net:nn.NeuralNet):
     
 def main():
     
+    np.cuda.Device(0).use()
     dbname = "test.db"
     net = nn.NeuralNet()
-    net.initializeweights(False)
+    #net.initializeweights(False)
+    load(net)
     
     num_rows = db.countdata(dbname)
     cumulative_error = 0
@@ -43,31 +49,52 @@ def main():
     errors = []
     worsts = []
     
-    iterlist = list(range(num_rows))
+    #iterlist = list(range(num_rows))
     
     
     sttime = time.time()
     ttaken = 0
     tremain = 0
     progress = 0
-    epochs = 1
+    epochs = 3
+    
+    ffstart = 0
+    ffend = 0
+    fftotal=0
+    bpstart=0
+    bpend=0
+    bptotal=0
+    batchctr = DB_BATCH_SIZE
+    
     for i in range(epochs):
         print("############## NEXT ITER (C%d) ##############" % (count))
         count = 0
         count2 = 0
-        random.shuffle(iterlist)
-        for x in iterlist:
+        #random.shuffle(iterlist)
+        rows_to_process = num_rows - TEST_SAMPLE_SIZE - DB_BATCH_SIZE
+        for x in range(rows_to_process):
+            if(batchctr>=DB_BATCH_SIZE):
+                batchctr=0
+                data = db.getrowbatch(x, DB_BATCH_SIZE, dbname)
+                random.shuffle(data)
         
             
-            row = db.getrow(x+1, dbname)
-            net.processrow(row)
-            count2 += 1
             
+            net.processrow(data[batchctr])
+            batchctr += 1
+            count2 += 1
             if(net.geteval()<10 and net.geteval()>-10):
                 count += 1
-                
+                ffstart = time.time()
                 net.calcoutput()
-
+                ffend = time.time()
+                fftotal += ffend - ffstart
+                
+                bpstart=time.time()
+                net.backpropagate()
+                bpend=time.time()
+                bptotal += bpend - bpstart
+    
                 cost = (net.geteval() - net.getoutput()) * (net.geteval() - net.getoutput())
                 if(cost > worst_cost):
                     worst_eval = net.geteval()
@@ -86,23 +113,33 @@ def main():
                         print("Time remaining: %d hours" % (tremain / 3600))
                     else:
                         print("Time remaining: %d seconds" % (tremain))
-                    print("Row %d | %d" % (count, count2), end='')
+                    print("Row %d" % (count), end='')
                     print(" | Error: %f" % (cumulative_error/TEST_CHUNK))
                     print("Sample eval: %f" % net.geteval(), end=' || ')
                     print("Sample out: %f" % net.getoutput())
                     print("Worst cost: %f || Eval: %f || Out: %f" % (worst_cost, worst_eval, worst_output))
+                    print("FFTime:\t%f" % (fftotal))
+                    print("BPtime:\t%f" % (bptotal))
                     print("#############################################")
                     
-                    worsts.append(worst_cost)
-                    errors.append(cumulative_error/TEST_CHUNK)
+                    worsts.append(np.asnumpy(worst_cost))
+                    errors.append((np.asnumpy(cumulative_error)/TEST_CHUNK))
+                    
+                    line_graph(errors, "error_plot.png")
+                    line_graph(worsts, "worst_plot.png")
                     
                     worst_cost = 0
                     cumulative_error = 0
                     
-                    line_graph(errors, "error_plot.png")
-                    line_graph(worsts, "worst_plot.png")
+                    ffstart = 0
+                    ffend = 0
+                    fftotal=0
+                    bpstart=0
+                    bpend=0
+                    bptotal=0
+                        
                 cumulative_error += cost
-                net.backpropagate()
+               
                 
     #net.printintputbits()
 
@@ -133,8 +170,8 @@ def main3():
     worsts = []
     for j in range(50000):
         count += 1
-        n = random.randint(0,65535)
-        t = '{0:016b}'.format(n)
+        n = random.randint(0,255)
+        t = '{0:08b}'.format(n)
         b = bitstring.BitArray(bin=t)
         net.loadinputbits(b)
         net.loadeval(n)
@@ -154,14 +191,10 @@ def main3():
             print("Sample out: %f" % net.getoutput())
             print("Worst cost: %f || Eval: %f || Out: %f" % (worst_cost, worst_eval, worst_output))
             
-            worsts.append(worst_cost)
-            errors.append(cumulative_error/TEST_CHUNK)
             
             worst_cost = 0
             cumulative_error = 0
-
-            line_graph(errors, "error_plot.png")
-            line_graph(worsts, "worst_plot.png")            
+          
 
         cumulative_error += cost
         net.backpropagate()

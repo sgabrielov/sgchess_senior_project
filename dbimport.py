@@ -53,3 +53,11 @@ def countdata(dbfile: str) -> int:
     
     return data[0][0]
     
+def getrowbatch(row_id: int, batch_size: int, dbfile: str) -> list:
+    con = sqlite3.connect(dbfile)
+    cur = con.cursor()
+    cur.execute("SELECT * FROM evaluations WHERE id>:id AND id<=:count", {"id": row_id, "count": batch_size + row_id})
+    data = cur.fetchall()
+    con.close()
+    
+    return data
