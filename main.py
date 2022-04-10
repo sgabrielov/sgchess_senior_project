@@ -11,7 +11,7 @@ import random
 
 import matplotlib.pyplot as plt
 
-TEST_CHUNK = 10000
+TEST_CHUNK = 100000
 DB_BATCH_SIZE = 100000
 TEST_SAMPLE_SIZE = 1000000
 
@@ -72,6 +72,7 @@ def main():
         count2 = 0
         #random.shuffle(iterlist)
         rows_to_process = num_rows - TEST_SAMPLE_SIZE - DB_BATCH_SIZE
+        cumulative_error = 0
         for x in range(rows_to_process):
             if(batchctr>=DB_BATCH_SIZE):
                 batchctr=0
@@ -103,7 +104,7 @@ def main():
                 if((count)%TEST_CHUNK==0):
                     save(net)
         
-                    progress = float((i+1) * count2) / (epochs * num_rows)
+                    progress = float((i * rows_to_process) + count2) / (epochs * rows_to_process)
                     ttaken = time.time() - sttime
                     if(progress > 0):
                         tremain = ttaken * (1-progress) / progress
