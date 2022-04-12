@@ -9,9 +9,11 @@ import bitstring
 import time
 import random
 
+
+
 import matplotlib.pyplot as plt
 
-TEST_CHUNK = 100000
+TEST_CHUNK = 1000000
 DB_BATCH_SIZE = 100000
 TEST_SAMPLE_SIZE = 1000000
 
@@ -30,6 +32,19 @@ def save(net:nn.NeuralNet):
 def load(net:nn.NeuralNet):
     net.loadbiases("bias.p")
     net.loadweights("weights.p")   
+    
+def formattime(t):
+    time = t
+    if time>=86400:
+        print("%d days " % (time/86400), end='')
+        time = time % 86400
+    if time>=3600:
+        print("%d hours " % (time/3600), end='')
+        time = time % 3600
+    if time>=60:
+        print("%d minutes " % (time/60), end='')
+        time = time % 60
+    print("%d seconds." % (time))
     
 def main():
     
@@ -56,7 +71,7 @@ def main():
     ttaken = 0
     tremain = 0
     progress = 0
-    epochs = 3
+    epochs = 6
     
     ffstart = 0
     ffend = 0
@@ -110,10 +125,7 @@ def main():
                         tremain = ttaken * (1-progress) / progress
                     
                     print("Progress: %.2f%%" % (progress*100))
-                    if(tremain > 3600):
-                        print("Time remaining: %d hours" % (tremain / 3600))
-                    else:
-                        print("Time remaining: %d seconds" % (tremain))
+                    formattime(tremain)
                     print("Row %d" % (count), end='')
                     print(" | Error: %f" % (cumulative_error/TEST_CHUNK))
                     print("Sample eval: %f" % net.geteval(), end=' || ')
@@ -140,7 +152,7 @@ def main():
                     bptotal=0
                         
                 cumulative_error += cost
-               
+                   
                 
     #net.printintputbits()
 
@@ -202,6 +214,7 @@ def main3():
     print(net.getoutput())
     print(net.geteval())
 
-main()
+if __name__ == '__main__':
+    main()
 
     
